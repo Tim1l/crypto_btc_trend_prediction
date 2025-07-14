@@ -242,7 +242,9 @@ for tf_name, config in timeframes.items():
 
 # Save predictions
 if not predictions.empty:
-    predictions = predictions.sort_values(['start_date', 'timeframe'])
+    timeframe_order = {'1week': 1, '1day': 2, '4hour': 3}
+    predictions['tf_order'] = predictions['timeframe'].map(timeframe_order)
+    predictions = predictions.sort_values(['start_date', 'tf_order']).drop(columns=['tf_order'])
     predictions.to_csv(output_file, index=False, encoding='utf-8')
     print(f"Saved {len(predictions)} predictions to {output_file}")
 else:
@@ -270,13 +272,25 @@ def send_telegram_update(added_rows):
     
     # Строим сообщение
     message = f"📈 {ASSET} Update 🚀\n\n"
-    for tf, data in sorted(grouped.items()):
-        message += f"**{tf}:**\n"
-        if data['prev']:
-            message += "Previous:\n" + "\n".join(data['prev']) + "\n"
-        if data['next']:
-            message += "Next:\n" + "\n".join(data['next']) + "\n"
-        message += "\n"
+    grouped_by_date = defaultdict(list)
+    for row in added_rows:
+        grouped_by_date[row['start_date']].append(row)
+    message = f"📈 {ASSET} Update 🚀\n\n"
+    timeframe_order = {'1week': 1, '1day': 2, '4hour': 3}
+    for start_date in sorted(grouped_by_date.keys()):
+        rows = grouped_by_date[start_date]
+        rows_sorted = sorted(rows, key=lambda x: timeframe_order[x['timeframe']])
+        for row in rows_sorted:
+            tf = row['timeframe']
+            date_str = row['start_date'].strftime('%Y-%m-%d') if tf in ['1week', '1day'] else row['start_date'].strftime('%Y-%m-%d %H:%M')
+            forecast = row['forecast']
+            if row['result'] == '⏳':
+                message += f"**{tf}:**\nNext:\n{date_str} - Forecast {forecast} ⏳\n\n"
+            else:
+                result = row['result']
+                correct = row['is_correct']
+                range_val = f"{row['range']}%" if not pd.isna(row['range']) else ''
+                message += f"**{tf}:**\nPrevious:\n{date_str} - Forecast {forecast}, Result {result} {correct}, Range {range_val}\n\n"
     
     # Отправка
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
