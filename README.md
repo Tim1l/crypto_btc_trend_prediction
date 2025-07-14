@@ -116,7 +116,7 @@ TELEGRAM_CHANNEL = "your_channel_id"
 
 ## 🚀 Usage
 
-Run the scripts in this order to update data and generate predictions.
+Run the scripts in this order to update data and generate predictions, or use `pipeline.py` to execute all steps in one go.
 
 ### Step 1: Update Market Data
 
@@ -148,6 +148,16 @@ python get_prediction.py
 
 - If Telegram is configured, updates will be sent to your channel.
 - Check `predictions.csv` for results.
+
+### Alternatively: Run Pipeline
+
+- Run `pipeline.py` to execute all steps (update data, preprocess, generate predictions) in one go, with logs saved to `pipeline_log.txt`:
+
+```bash
+python pipeline.py
+```
+
+- Check `pipeline_log.txt` for execution details and `predictions.csv` for results.
 
 ## 📈 Example Prediction (Telegram Output)
 
