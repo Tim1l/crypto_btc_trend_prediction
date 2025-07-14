@@ -177,5 +177,14 @@ python get_prediction.py > log.txt 2>&1
 
 ## ℹ️ Notes
 
-- **Performance**: The neural network (LSTM + TCN with Attention layer) predicts Bitcoin price trends with an average accuracy of ~66.5% across timeframes (1 week, 1 day, 4 hours). Weekly predictions achieve ~60.4% accuracy, daily ~65.7%, and 4-hour ~66.7%, based on historical data. Use at your own risk; results are not guaranteed.
+- **🔥 Performance**: Our neural network (LSTM + TCN with Attention layer) crushes it, predicting Bitcoin price trends with a stellar ~66.5% average accuracy across multiple timeframes! 🚀 Check out the results:
+
+| Timeframe | Accuracy  |
+|-----------|-----------|
+| Weekly    | ~60.4%    |
+| Daily     | ~65.7%    |
+| 4-Hour    | ~66.7%    |
+
+Based on historical data. Use at your own risk; results are not guaranteed.
+
 - **Disclaimer**: This tool is for research purposes only. It is not financial advice. Trading involves significant risk; consult a financial advisor before making decisions.
