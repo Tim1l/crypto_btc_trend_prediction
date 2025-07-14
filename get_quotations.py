@@ -41,17 +41,8 @@ if existing_df is not None and not existing_df.empty:
     last_timestamp = existing_df.index.max()
     minutes_available = (last_timestamp - existing_df.index.min()).total_seconds() / 60
     print(f"Available data: {minutes_available/60/24:.2f} days ({minutes_available/60/24/7:.2f} weeks)")
-    if minutes_available >= min_minutes and (current_time - last_timestamp).total_seconds() / 60 < 2:
-        print("Sufficient data available and up-to-date. No fetch needed.")
-        existing_df = existing_df.astype({'OPEN': float, 'HIGH': float, 'LOW': float, 'CLOSE': float})
-        existing_df.to_csv(output_file)
-        print(f"Data saved to {output_file}")
-        print(f"Final dataset size: {existing_df.shape}")
-        print(existing_df.tail())
-        exit(0)
-    else:
-        print("Fetching new data from last timestamp.")
-        start_time = int(last_timestamp.timestamp() * 1000) + 60_000  # Next minute
+    print("Fetching new data from last timestamp.")
+    start_time = int(last_timestamp.timestamp() * 1000) + 60_000  # Next minute
 else:
     print(f"Fetching {min_weeks} weeks of data from {min_start_time}")
     start_time = int(min_start_time.timestamp() * 1000)
