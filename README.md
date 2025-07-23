@@ -1,3 +1,4 @@
+![Header Image](images/wallpaper.png)
 # 📊 Crypto BTC Trend Prediction
 
 ![Python](https://img.shields.io/badge/python-3.10.9-blue.svg) ![Status](https://img.shields.io/badge/status-active-brightgreen.svg)
