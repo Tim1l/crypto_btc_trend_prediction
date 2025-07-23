@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.10.9-blue.svg) ![Status](https://img.shields.io/badge/status-active-brightgreen.svg)
 
-This project predicts the trend of Bitcoin (BTCUSDT) prices across multiple timeframes (1 week, 1 day, 4 hours) using a LSTM and TCN models with additional Attention layer. It generates predictions, saves them to predictions.csv, and sends updates to a Telegram channel. The project includes scripts to fetch market data, preprocess it, and make predictions.
+This project predicts the trend of Bitcoin (BTC/USDT) prices across multiple timeframes (1 week, 1 day, 4 hours) using a LSTM and TCN model with an additional Attention layer. It generates predictions, saves them to `predictions.csv`, and sends updates to a Telegram channel. The project includes scripts to fetch market data, preprocess it, and make predictions.
 
 ## 📋 Prerequisites
 
@@ -120,7 +120,7 @@ Run the scripts in this order to update data and generate predictions, or use `p
 
 ### Step 1: Update Market Data
 
-- Run `get_quotations.py` to fetch the latest BTCUSDT market data:
+- Run `get_quotations.py` to fetch the latest BTC/USDT market data:
 
 ```bash
 python get_quotations.py
@@ -161,7 +161,7 @@ python pipeline.py
 
 ## 📈 Example Prediction (Telegram Output)
 
-> 📈 BTCUSDT Update 🚀
+> 📈 BTC/USDT Update 🚀
 
 - **1day**:
   - Previous: 2025-07-13 - Forecast ⬆️, Result ⬆️ ✅, Range 1.96%
@@ -187,13 +187,19 @@ python get_prediction.py > log.txt 2>&1
 
 ## ℹ️ Notes
 
-- **🔥 Performance**: Our neural network (LSTM + TCN with Attention layer) crushes it, predicting Bitcoin price trends with a stellar ~66.5% average accuracy across multiple timeframes! 🚀 Check out the results:
+- **🔥 Performance**: Our hybrid LSTM-TCN model with an Attention layer delivers robust Bitcoin price trend predictions with an average accuracy of ~66.5% across multiple timeframes. Below are the performance metrics, a sample forecast, and out-of-sample test results from the past year.
 
 | Timeframe | Accuracy  |
 |-----------|-----------|
 | Weekly    | ~60.4%    |
 | Daily     | ~65.7%    |
 | 4-Hour    | ~66.7%    |
+
+![Sample Forecast](images/life_forecast_example.png)
+*Example of a live BTC/USDT trend prediction across 4h, 1d, and 1w timeframes, showcasing real-time forecasting capabilities.*
+
+![Out-of-Sample Results](images/out_of_sample_data_stats.png)
+*Out-of-sample performance metrics for the past year, demonstrating consistent accuracy and F-score (0.67) across market conditions.*
 
 Based on historical data. Use at your own risk; results are not guaranteed.
 
