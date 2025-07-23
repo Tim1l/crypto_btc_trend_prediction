@@ -1,0 +1,119 @@
+[2025-07-14 02:56:02] === Starting Pipeline ===
+[2025-07-14 02:56:02] Starting get_quotations.py...
+[2025-07-14 02:56:16] Existing data loaded: (856801, 4)
+Data range: 2023-11-26 09:25:00 to 2025-07-13 09:25:00
+Available data: 595.00 days (85.00 weeks)
+Fetching new data from last timestamp.
+Downloaded 1000 new candles (buffer: 1000)
+Downloaded 1351 new candles (buffer: 1351)
+Saved ./data/BTCUSDT_1min.csv. Total rows: 856801
+No more new data available.
+Data fetching completed.
+
+[2025-07-14 02:56:16] get_quotations.py completed successfully.
+[2025-07-14 02:56:16] --- Finished get_quotations.py ---
+[2025-07-14 02:56:16] Starting process_data.py...
+[2025-07-14 02:56:20] Checking minute-level data (856801 rows, 4 columns):
+  No NaN found
+  No gaps in time series
+  All good, no NaN or gaps
+4H class distribution: Down = 48.12%, Up = 51.88%
+D class distribution: Down = 47.17%, Up = 52.83%
+W class distribution: Down = 44.30%, Up = 55.70%
+Anomalies in 4H (WilliamsR_14 < -100): 0 rows
+Saved 4H: (3227, 94) to ./data/BTCUSDT_4H.csv
+Anomalies in D (WilliamsR_14 < -100): 0 rows
+Saved D: (497, 94) to ./data/BTCUSDT_D.csv
+Anomalies in W (WilliamsR_14 < -100): 0 rows
+Saved W: (29, 94) to ./data/BTCUSDT_W.csv
+
+Checking 4H (3227 rows, 94 columns):
+  No NaN found
+  No gaps in time series
+  All good, no NaN or gaps
+
+Checking D (497 rows, 94 columns):
+  No NaN found
+  No gaps in time series
+  All good, no NaN or gaps
+
+Checking W (29 rows, 94 columns):
+  No NaN found
+  No gaps in time series
+  All good, no NaN or gaps
+4H: (3227, 94), columns: 94
+  Data range: 2024-01-23 08:00:00 to 2025-07-14 00:00:00
+D: (497, 94), columns: 94
+  Data range: 2024-03-04 00:00:00 to 2025-07-13 00:00:00
+W: (29, 94), columns: 94
+  Data range: 2024-12-23 00:00:00 to 2025-07-07 00:00:00
+
+[2025-07-14 02:56:20] process_data.py completed successfully.
+[2025-07-14 02:56:20] --- Finished process_data.py ---
+[2025-07-14 02:56:20] Starting get_prediction.py...
+[2025-07-14 02:56:32] Processing predictions at 2025-07-14 02:56:29
+Saved 25 predictions to predictions.csv
+Telegram send error: {"ok":false,"error_code":404,"description":"Not Found"}
+
+[2025-07-14 02:56:32] get_prediction.py completed successfully.
+[2025-07-14 02:56:32] --- Finished get_prediction.py ---
+[2025-07-14 02:56:32] === Pipeline Completed Successfully ===
+[2025-07-14 03:19:31] === Starting Pipeline ===
+[2025-07-14 03:19:31] Starting get_quotations.py...
+[2025-07-14 03:19:43] Existing data loaded: (856801, 4)
+Data range: 2023-11-27 07:56:00 to 2025-07-14 07:56:00
+Available data: 595.00 days (85.00 weeks)
+Fetching new data from last timestamp.
+Downloaded 23 new candles (buffer: 23)
+Saved ./data/BTCUSDT_1min.csv. Total rows: 856801
+No more new data available.
+Data fetching completed.
+
+[2025-07-14 03:19:43] get_quotations.py completed successfully.
+[2025-07-14 03:19:43] --- Finished get_quotations.py ---
+[2025-07-14 03:19:43] Starting process_data.py...
+[2025-07-14 03:19:47] Checking minute-level data (856801 rows, 4 columns):
+  No NaN found
+  No gaps in time series
+  All good, no NaN or gaps
+4H class distribution: Down = 48.12%, Up = 51.88%
+D class distribution: Down = 47.17%, Up = 52.83%
+W class distribution: Down = 44.30%, Up = 55.70%
+Anomalies in 4H (WilliamsR_14 < -100): 0 rows
+Saved 4H: (3227, 94) to ./data/BTCUSDT_4H.csv
+Anomalies in D (WilliamsR_14 < -100): 0 rows
+Saved D: (497, 94) to ./data/BTCUSDT_D.csv
+Anomalies in W (WilliamsR_14 < -100): 0 rows
+Saved W: (29, 94) to ./data/BTCUSDT_W.csv
+
+Checking 4H (3227 rows, 94 columns):
+  No NaN found
+  No gaps in time series
+  All good, no NaN or gaps
+
+Checking D (497 rows, 94 columns):
+  No NaN found
+  No gaps in time series
+  All good, no NaN or gaps
+
+Checking W (29 rows, 94 columns):
+  No NaN found
+  No gaps in time series
+  All good, no NaN or gaps
+4H: (3227, 94), columns: 94
+  Data range: 2024-01-23 12:00:00 to 2025-07-14 04:00:00
+D: (497, 94), columns: 94
+  Data range: 2024-03-04 00:00:00 to 2025-07-13 00:00:00
+W: (29, 94), columns: 94
+  Data range: 2024-12-23 00:00:00 to 2025-07-07 00:00:00
+
+[2025-07-14 03:19:47] process_data.py completed successfully.
+[2025-07-14 03:19:47] --- Finished process_data.py ---
+[2025-07-14 03:19:47] Starting get_prediction.py...
+[2025-07-14 03:19:59] Processing predictions at 2025-07-14 03:19:55
+Saved 6 predictions to predictions.csv
+Telegram send error: {"ok":false,"error_code":404,"description":"Not Found"}
+
+[2025-07-14 03:19:59] get_prediction.py completed successfully.
+[2025-07-14 03:19:59] --- Finished get_prediction.py ---
+[2025-07-14 03:19:59] === Pipeline Completed Successfully ===
