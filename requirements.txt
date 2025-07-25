@@ -5,6 +5,7 @@ certifi==2025.7.9
 charset-normalizer==3.4.2
 dotenv=0.9.9
 exceptiongroup==1.3.0
+farcaster=0.7.12
 flatbuffers==25.2.10
 gast==0.6.0
 google-pasta==0.2.0

@@ -38,7 +38,7 @@ def run_script(script_name, log_file):
 
 def main():
     log_file = Path("pipeline_log.txt")
-    scripts = ["get_quotations.py", "process_data.py", "get_prediction.py", "x_post.py"]
+    scripts = ["get_quotations.py", "process_data.py", "get_prediction.py", "x_post.py", "farc_post.py"]
 
     # Ensure log file exists
     log_file.touch(exist_ok=True)
