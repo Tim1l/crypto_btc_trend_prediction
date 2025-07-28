@@ -112,9 +112,9 @@ for tf, config in timeframes.items():
         last_closed = last_data_time.floor(interval)
     df = df[df.index < last_closed]
 
-    # Trim to 78 weeks
-    min_start = df.index.max() - pd.Timedelta(weeks=min_weeks)
-    df = df[df.index >= min_start]
+    # # Trim to 78 weeks
+    # min_start = df.index.max() - pd.Timedelta(weeks=85)
+    # df = df[df.index >= min_start]
 
     # Calculate indicators
     df['RSI_7'] = RSIIndicator(df['CLOSE'], window=7).rsi()
