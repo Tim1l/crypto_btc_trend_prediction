@@ -1,173 +1,129 @@
-import requests
-import pandas as pd
 import time
+import pandas as pd
+import datetime as dt
 import os
 from pathlib import Path
-import datetime as dt
+import ccxt
 
 # Configuration
-symbol = "BTC/USDT"
-interval = "1"  # 1-minute interval
-output_dir = "./data"
-output_file = f"{output_dir}/BTCUSDT_1min.csv"
-min_weeks = 85  # Minimum required weeks of data
-min_minutes = min_weeks * 7 * 24 * 60  # ~787,680 minutes
-limit = 1000  # Max candles per API request
-api_url = "https://api.bybit.com/v5/market/kline"
-save_every = 10000  # Save after collecting N candles
+symbol = 'BTC/USDT:USDT'
+interval = '1m'  # 1-minute interval
+output_dir = './data'
+old_file = f'{output_dir}/BTCUSDT_1min.csv'
+output_file = f'{output_dir}/BTCUSDT_1min.csv'
+min_weeks = 128
 
 # Ensure output directory exists
 Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-# Load existing data
-existing_df = None
-if os.path.exists(output_file):
+# Initialize Bybit exchange via ccxt
+exchange = ccxt.bybit({
+    'enableRateLimit': True,  # Respect API rate limits
+})
+
+# Load old data if exists
+old_df = None
+if os.path.exists(old_file):
     try:
-        existing_df = pd.read_csv(output_file, parse_dates=['DATETIME'])
-        existing_df.set_index('DATETIME', inplace=True)
-        existing_df = existing_df[~existing_df.index.duplicated(keep='last')]
-        print(f"Existing data loaded: {existing_df.shape}")
-        print(f"Data range: {existing_df.index.min()} to {existing_df.index.max()}")
+        old_df = pd.read_csv(old_file, parse_dates=['DATETIME'])
+        old_df.set_index('DATETIME', inplace=True)
+        duplicates_old = old_df.index.duplicated().sum()
+        if duplicates_old > 0:
+            print(f"Found {duplicates_old} duplicate timestamps in old_df, keeping first occurrence")
+            old_df = old_df[~old_df.index.duplicated(keep='first')]
+        print(f"Old data loaded: {old_df.shape}")
+        print(f"Data range: {old_df.index.min()} to {old_df.index.max()}")
     except Exception as e:
-        print(f"Error loading existing data: {e}. Starting fresh.")
-        existing_df = None
+        print(f"Error loading old data: {e}. Starting fresh.")
+        old_df = None
 else:
-    print("No existing data found. Starting fresh.")
+    print("No old data found. Starting fresh.")
 
-# Determine start time
-current_time = dt.datetime.now().replace(tzinfo=None)  # Naive datetime
-min_start_time = current_time - dt.timedelta(weeks=min_weeks)
-if existing_df is not None and not existing_df.empty:
-    last_timestamp = existing_df.index.max()
-    minutes_available = (last_timestamp - existing_df.index.min()).total_seconds() / 60
-    print(f"Available data: {minutes_available/60/24:.2f} days ({minutes_available/60/24/7:.2f} weeks)")
-    print("Fetching new data from last timestamp.")
-    start_time = int(last_timestamp.timestamp() * 1000) + 60_000  # Next minute
+# Determine cutoff and filter old_df
+if old_df is not None and not old_df.empty:
+    cutoff_date = old_df.index.max()
+    start_date = cutoff_date - pd.Timedelta(weeks=min_weeks)
+    old_df = old_df[(old_df.index >= start_date) & (old_df.index <= cutoff_date)]
+    old_df = old_df[['OPEN', 'HIGH', 'LOW', 'CLOSE']]
+    old_df = old_df.astype({'OPEN': float, 'HIGH': float, 'LOW': float, 'CLOSE': float})
+    start_timestamp = int((cutoff_date + pd.Timedelta(minutes=1)).timestamp() * 1000)
 else:
-    print(f"Fetching {min_weeks} weeks of data from {min_start_time}")
-    start_time = int(min_start_time.timestamp() * 1000)
+    end_datetime = dt.datetime.now(dt.timezone.utc)
+    start_datetime = end_datetime - pd.Timedelta(weeks=min_weeks)
+    start_timestamp = int(start_datetime.timestamp() * 1000)
+    cutoff_date = None  # Will be set after fetching
 
-# Fetch new data
-candles = []
-total_new = 0
-while True:
-    params = {
-        "category": "linear",
-        "symbol": symbol.replace("/", ""),
-        "interval": interval,
-        "limit": limit
-    }
-    if start_time:
-        params["start"] = start_time
+end_timestamp = int(dt.datetime.now(dt.timezone.utc).timestamp() * 1000)
 
+# Collect new data
+df_list = []
+since = start_timestamp
+while since < end_timestamp:
     try:
-        resp = requests.get(api_url, params=params)
-        data = resp.json()
-        if data["retCode"] != 0:
-            print(f"API error: {data['retMsg']}")
+        ohlcv = exchange.fetch_ohlcv(symbol, interval, since, limit=1000)
+        if not ohlcv:
+            print("No data available for this time range")
             break
+
+        df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms', utc=True)
+        df_list.append(df)
+
+        since = int(df['timestamp'].iloc[-1].timestamp() * 1000) + 1
+        print(f"Collecting data starting from {dt.datetime.fromtimestamp(since / 1000, tz=dt.timezone.utc)}")
+
+        time.sleep(exchange.rateLimit / 1000)  # Pause to respect rate limits
     except Exception as e:
-        print(f"Request failed: {e}. Retrying in 5 seconds.")
-        time.sleep(5)
+        print(f"Error: {e}")
+        time.sleep(5)  # Pause on error
         continue
 
-    klines = data["result"]["list"]
-    if not klines:
-        print("No more new data available.")
-        break
-
-    # Sort and filter new candles
-    klines = sorted(klines, key=lambda x: int(x[0]))
-    klines = [k for k in klines if int(k[0]) >= start_time]
-    if not klines:
-        break
-
-    candles.extend(klines)
-    total_new += len(klines)
-    print(f"Downloaded {total_new} new candles (buffer: {len(candles)})")
-
-    # Save periodically or at end
-    if len(candles) >= save_every or len(klines) < limit:
-        df_new = pd.DataFrame(candles, columns=[
-            "timestamp", "open", "high", "low", "close", "volume", "turnover"
-        ])
-        df_new['DATETIME'] = pd.to_datetime(df_new['timestamp'].astype('int64'), unit='ms')
-        df_new = df_new[['DATETIME', 'open', 'high', 'low', 'close']]
-        df_new = df_new.rename(columns={
-            'open': 'OPEN', 'high': 'HIGH', 'low': 'LOW', 'close': 'CLOSE'
-        })
-        df_new = df_new.astype({
-            'OPEN': float, 'HIGH': float, 'LOW': float, 'CLOSE': float
-        })
-        df_new = df_new.set_index('DATETIME')
-        df_new = df_new[~df_new.index.duplicated(keep='last')]
-
-        # Merge with existing data
-        if existing_df is not None and not existing_df.empty:
-            combined_df = pd.concat([existing_df, df_new])
-            combined_df = combined_df[~combined_df.index.duplicated(keep='last')]
-            combined_df = combined_df.sort_index()
-        else:
-            combined_df = df_new
-
-        # Trim to at least 78 weeks
-        min_start = combined_df.index.max() - dt.timedelta(weeks=min_weeks)
-        combined_df = combined_df[combined_df.index >= min_start]
-
-        # Fill gaps (forward fill)
-        combined_df = combined_df.asfreq('1min').ffill()
-
-        # Save to CSV
-        combined_df.to_csv(output_file)
-        print(f"Saved {output_file}. Total rows: {len(combined_df)}")
-        candles = []  # Clear buffer
-        existing_df = combined_df  # Update existing_df for next iteration
-
-    # Update start_time for next request
-    start_time = int(klines[-1][0]) + 60_000
-    time.sleep(1.1)  # Rate limit delay
-
-# Final save if any candles remain
-if candles:
-    df_new = pd.DataFrame(candles, columns=[
-        "timestamp", "open", "high", "low", "close", "volume", "turnover"
-    ])
-    df_new['DATETIME'] = pd.to_datetime(df_new['timestamp'].astype('int64'), unit='ms')
-    df_new = df_new[['DATETIME', 'open', 'high', 'low', 'close']]
-    df_new = df_new.rename(columns={
-        'open': 'OPEN', 'high': 'HIGH', 'low': 'LOW', 'close': 'CLOSE'
+# Combine new data
+new_df = pd.DataFrame()
+if df_list:
+    new_df = pd.concat(df_list, ignore_index=True)
+    new_df.drop_duplicates(subset=['timestamp'], keep='last', inplace=True)
+    new_df.sort_values('timestamp', inplace=True)
+    new_df = new_df.rename(columns={
+        'open': 'OPEN',
+        'high': 'HIGH',
+        'low': 'LOW',
+        'close': 'CLOSE',
+        'timestamp': 'DATETIME'
     })
-    df_new = df_new.astype({
-        'OPEN': float, 'HIGH': float, 'LOW': float, 'CLOSE': float
-    })
-    df_new = df_new.set_index('DATETIME')
-    df_new = df_new[~df_new.index.duplicated(keep='last')]
+    new_df = new_df.drop(columns=['volume'])
+    new_df['DATETIME'] = pd.to_datetime(new_df['DATETIME']).dt.tz_localize(None)
+    new_df = new_df.set_index('DATETIME')
+    new_df = new_df.astype({'OPEN': float, 'HIGH': float, 'LOW': float, 'CLOSE': float})
+    print(f"New data collected: {new_df.shape}")
+    print(new_df.head())
 
-    # Merge with existing data
-    if existing_df is not None and not existing_df.empty:
-        combined_df = pd.concat([existing_df, df_new])
-        combined_df = combined_df[~combined_df.index.duplicated(keep='last')]
-        combined_df = combined_df.sort_index()
-    else:
-        combined_df = df_new
+# Combine old and new
+if old_df is not None and not old_df.empty:
+    combined_df = pd.concat([old_df, new_df], axis=0)
+else:
+    combined_df = new_df
 
-    # Trim to at least 78 weeks
-    min_start = combined_df.index.max() - dt.timedelta(weeks=min_weeks)
-    combined_df = combined_df[combined_df.index >= min_start]
+# Ensure no duplicate timestamps
+duplicates_combined = combined_df.index.duplicated().sum()
+if duplicates_combined > 0:
+    print(f"Found {duplicates_combined} duplicate timestamps in combined_df, keeping first occurrence")
+    combined_df = combined_df[~combined_df.index.duplicated(keep='first')]
 
-    # Fill gaps (forward fill)
-    combined_df = combined_df.asfreq('1min').ffill()
+# Fill any gaps in minute-level data by forward fill
+combined_df = combined_df.asfreq('1min').ffill()
 
-    # Check for large gaps
-    gaps = combined_df.index.to_series().diff().dt.total_seconds() / 60
-    large_gaps = gaps[gaps > 5]
-    if not large_gaps.empty:
-        print(f"Warning: Found {len(large_gaps)} gaps > 5 minutes. Largest gap: {large_gaps.max()} minutes")
+# Check for large gaps
+gaps = combined_df.index.to_series().diff().dt.total_seconds() / 60
+large_gaps = gaps[gaps > 5]
+if not large_gaps.empty:
+    print(f"Warning: Found {len(large_gaps)} gaps > 5 minutes. Largest gap: {large_gaps.max()} minutes")
 
-    # Save to CSV
-    combined_df.to_csv(output_file)
-    print(f"Final save to {output_file}. Total rows: {len(combined_df)}")
-    print(f"Data range: {combined_df.index.min()} to {combined_df.index.max()}")
-    print(combined_df.tail())
+# Save combined data
+combined_df.to_csv(output_file)
+print(f"Combined data saved to {output_file}")
+print(f"Dataset size: {combined_df.shape}")
+print(combined_df.head(3))
+print(combined_df.tail(3))
 
 print("Data fetching completed.")
