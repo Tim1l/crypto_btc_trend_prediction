@@ -14,7 +14,7 @@ Originally built around Bitcoin trend predictions, the project has evolved beyon
 - Developed reporting, notification, and monitoring tools to support continued research and prototype operation.
 
 ## 📍 Current Status — November 2026
-Active research and paper-trading evaluation. The project has previous live prototype experience; the current configuration is being assessed before further deployment.
+Production-deployed forecasting system operating across multiple financial assets, with automated market-data processing, prediction delivery, and monitoring.
 
 ## 🌟 Research & Engineering
 - **Financial ML Research**: Development and investigation of learning-based approaches to financial forecasting.
