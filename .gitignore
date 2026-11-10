@@ -3,3 +3,25 @@ __pycache__/
 .venv/
 *.log
 .xenv
+
+# Local credentials
+.env
+.env.*
+!.env.example
+
+# Private research implementation
+get_prediction.py
+process_data.py
+pipeline.py
+pipeline.bat
+
+# Models, datasets, and runtime outputs
+*.keras
+*.h5
+*.hdf5
+data/
+predictions.csv
+pipeline_log.txt
+state.csv
+state_farc.csv
+temp_image_*.png

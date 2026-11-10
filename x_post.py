@@ -10,8 +10,9 @@ from PIL import Image
 # Load variables from .xenv
 load_dotenv('.xenv')
 proxies = os.getenv("proxies")
-os.environ['http_proxy'] = proxies
-os.environ['https_proxy'] = proxies
+if proxies:
+    os.environ['http_proxy'] = proxies
+    os.environ['https_proxy'] = proxies
 
 # Get keys
 api_key = os.getenv("api_key")
@@ -41,23 +42,10 @@ openai_client = OpenAI(api_key=dalle_api_key)
 predictions_path = 'predictions.csv'  # Adjust if needed
 state_path = 'state.csv'  # In current folder
 
-# Hardcoded probabilities
-prob_map = {0: 66, 1: 72, 2: 78, 3: 81, 4: 100, 5: 100}  # After n fails
-
-# Prompts for images
-bull_prompts = {
-    66: "Small uncertain cartoon bull in green colors (no text on the picture)",
-    72: "Teenage bull looking more confident, cartoon style in green (no text on the picture)",
-    78: "Adult confident bull standing strong, cartoon in green (no text on the picture)",
-    81: "Very confident bull with determined expression, cartoon green (no text on the picture)",
-    100: "Mega powerful muscular charging bull, epic cartoon in green (no text on the picture)"
-}
-bear_prompts = {
-    66: "Small uncertain cartoon bear in red colors (no text on the picture)",
-    72: "Teenage bear looking more confident, cartoon style in red (no text on the picture)",
-    78: "Adult confident bear standing strong, cartoon in red (no text on the picture)",
-    81: "Very confident bear with determined expression, cartoon red (no text on the picture)",
-    100: "Mega powerful muscular charging bear, epic cartoon in red (no text on the picture)"
+# Directional illustrations without model-confidence claims
+image_prompts = {
+    '⬆️': "Cartoon bull in green colors, clean composition, no text or numbers",
+    '⬇️': "Cartoon bear in red colors, clean composition, no text or numbers"
 }
 
 # Load predictions.csv (assuming it has columns: timeframe, start_date, forecast, result, etc.)
@@ -75,9 +63,10 @@ current_forecast = current_row['forecast']
 if os.path.exists(state_path):
     state_df = pd.read_csv(state_path, parse_dates=['post_date'])
 else:
-    state_df = pd.DataFrame(columns=['post_date', 'forecast', 'probability', 'post_id', 'actual_result'])
+    state_df = pd.DataFrame(columns=['post_date', 'forecast', 'post_id', 'actual_result'])
     state_df.to_csv(state_path, index=False)
     
+state_df = state_df.drop(columns=['probability'], errors='ignore')
 state_df['actual_result'] = state_df['actual_result'].astype('object')
 
 # Update actual_result for previous posts if needed
@@ -92,38 +81,20 @@ for idx, row in state_df.iterrows():
                 state_df.at[idx, 'actual_result'] = is_correct
 state_df.to_csv(state_path, index=False)
 
-# Calculate fail_streak from daily_df before current ⏳
-fail_streak = 0
-prev_rows = daily_df[daily_df['result'] != '⏳'].tail(5)  # Last 5 completed for max streak
-for i in range(len(prev_rows) - 1, -1, -1):
-    if prev_rows.iloc[i]['is_correct'] == '❌':
-        fail_streak += 1
-    else:
-        break
-
-# Get probability
-prob = prob_map.get(fail_streak, 66)  # Default to 66 if >5
-print(f"Fail streak: {fail_streak}")
-print(f"Probability: {prob}%")
-
-# Check if should post
+# Calendar-based posting cadence, independent of prediction confidence
 should_post = False
-if prob > 66:
-    should_post = True
+if not state_df.empty:
+    last_post_date = state_df['post_date'].max()
+    days_since = (current_date - last_post_date).days
+    print(f"Days since last post: {days_since}")
+    if days_since > 2:
+        should_post = True
 else:
-    # Check days since last post
-    if not state_df.empty:
-        last_post_date = state_df['post_date'].max()
-        days_since = (current_date - last_post_date).days
-        print(f"Days since last post: {days_since}")
-        if days_since > 2:
-            should_post = True
-    else:
-        print("No previous posts")
-        # No posts yet, post if Wed or later
-        if current_date.weekday() >= 2:  # 2=Wed,3=Thu,4=Fri,5=Sat,6=Sun
-            should_post = True
-            print(f"Current weekday: {current_date.weekday()} ( >=2 )")
+    print("No previous posts")
+    # No posts yet, post if Wed or later
+    if current_date.weekday() >= 2:  # 2=Wed,3=Thu,4=Fri,5=Sat,6=Sun
+        should_post = True
+        print(f"Current weekday: {current_date.weekday()} ( >=2 )")
 
 print(f"Should post: {should_post}")
 if should_post:
@@ -141,11 +112,10 @@ if should_post:
 
         # Format tweet
         current_date_str = current_date.strftime('%Y-%m-%d')
-        tweet = f"{last_str} Forecast for Today: {current_date_str} (UTC time) daily candle for BTCUSDT: {current_forecast} (Probability {prob}%) | Not financial advice, for entertainment purposes only"
+        tweet = f"{last_str} Forecast for Today: {current_date_str} (UTC time) daily candle for BTCUSDT: {current_forecast} | Not financial advice, for entertainment purposes only"
 
         # Generate image
-        prompts = bull_prompts if current_forecast == '⬆️' else bear_prompts
-        prompt = prompts[prob]
+        prompt = image_prompts[current_forecast]
         response = openai_client.images.generate(
             model="dall-e-3",
             prompt=prompt,
@@ -155,7 +125,7 @@ if should_post:
         image_url = response.data[0].url
 
         # Download image
-        image_path = f"temp_image_{prob}.png"
+        image_path = f"temp_image_{current_date_str}.png"
         img_data = requests.get(image_url).content
         with open(image_path, 'wb') as handler:
             handler.write(img_data)
@@ -177,7 +147,6 @@ if should_post:
         new_row = pd.DataFrame({
             'post_date': [current_date],
             'forecast': [current_forecast],
-            'probability': [prob],
             'post_id': [post_id],
             'actual_result': [pd.NA]
         })

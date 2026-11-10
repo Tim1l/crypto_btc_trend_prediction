@@ -110,14 +110,15 @@ if duplicates_combined > 0:
     print(f"Found {duplicates_combined} duplicate timestamps in combined_df, keeping first occurrence")
     combined_df = combined_df[~combined_df.index.duplicated(keep='first')]
 
-# Fill any gaps in minute-level data by forward fill
-combined_df = combined_df.asfreq('1min').ffill()
-
-# Check for large gaps
+# Check for large gaps in observed timestamps before filling
+combined_df = combined_df.sort_index()
 gaps = combined_df.index.to_series().diff().dt.total_seconds() / 60
 large_gaps = gaps[gaps > 5]
 if not large_gaps.empty:
     print(f"Warning: Found {len(large_gaps)} gaps > 5 minutes. Largest gap: {large_gaps.max()} minutes")
+
+# Fill any gaps in minute-level data by forward fill
+combined_df = combined_df.asfreq('1min').ffill()
 
 # Save combined data
 combined_df.to_csv(output_file)
